@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Didaar Exhibition - Unified Platform Prototype</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              purple: '#815AA2',
+              'purple-dark': '#724C99',
+              'purple-deep': '#543377',
+              pink: '#F8C1C7',
+              'pink-soft': '#F5B4C2',
+              'pink-light': '#FDF2F4'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="flex flex-col items-center justify-start min-h-screen py-3 sm:py-6 px-2 sm:px-4 select-none">
+
+  <!-- ================= TOP MASTER PLATFORM BAR ================= -->
+  <header class="desktop-presentation-bar w-full max-w-6xl mb-4 bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15 text-white flex flex-wrap items-center justify-between gap-3 shadow-2xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#724C99] to-[#F5B4C2] flex items-center justify-center font-black text-xl text-white shadow-lg">
+        D
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-extrabold text-sm tracking-wide">DIDAAR EXHIBITIONS PLATFORM</h1>
+          <span id="userRoleBadge" class="text-[10px] font-bold bg-[#F8C1C7] text-[#543377] px-2.5 py-0.5 rounded-full uppercase tracking-wider">Unified System</span>
+        </div>
+        <p class="text-[11px] text-purple-200">Mobile Apps (Customer, Owner, Staff, Admin Staff) + Super Admin Web Panel</p>
+      </div>
+    </div>
+
+    <!-- Portal Mode Switcher (Mobile Simulator vs Super Admin Web Panel) -->
+    <div class="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/10 text-xs">
+      <button id="toggleMobilePortalBtn" onclick="App.switchPortal('mobile')" class="px-3 py-1.5 rounded-lg bg-brand-purple-dark text-white font-bold text-xs shadow flex items-center gap-1.5">
+        <i class="fa-solid fa-mobile-screen"></i> Mobile App Simulator
+      </button>
+      <button id="toggleAdminPortalBtn" onclick="App.switchPortal('web_admin')" class="px-3 py-1.5 rounded-lg text-purple-200 hover:text-white font-bold text-xs flex items-center gap-1.5">
+        <i class="fa-solid fa-desktop"></i> Super Admin Web Panel
+      </button>
+    </div>
+
+    <!-- Mobile User Role Dropdown (Visible in Mobile Simulator Mode) -->
+    <div class="flex items-center gap-2">
+      <select id="desktopRoleSelect" onchange="App.setLoginRole(this.value); App.updateUserRole(this.value); if(this.value==='customer') App.switchScreen('home'); else if(this.value==='stall_owner') App.switchScreen('owner-dashboard'); else if(this.value==='staff') App.switchScreen('staff-pos'); else App.switchScreen('admin-entry');" class="bg-[#2A203B] text-white font-bold text-xs px-2.5 py-1.5 rounded-xl border border-purple-400/40 focus:outline-none focus:border-[#F8C1C7] cursor-pointer">
+        <option value="customer">🛍️ Customer / Visitor</option>
+        <option value="stall_owner">🏪 Stall Owner (Zaveri Jewels)</option>
+        <option value="staff">🏷️ Stall Owner Staff Member (Nilesh)</option>
+        <option value="admin_staff">🛡️ Admin Staff Member (Rajesh Varma)</option>
+      </select>
+
+      <select id="screenPicker" onchange="App.switchScreen(this.value)" class="bg-[#2A203B] text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-purple-400/30 focus:outline-none focus:border-[#F8C1C7] cursor-pointer shadow-inner">
+        <!-- JS Populated -->
+      </select>
+    </div>
+  </header>
+
+  <!-- ================= VIEW 1: MOBILE SIMULATOR ================= -->
+  <div id="mobileSimulatorView" class="phone-wrapper flex justify-center w-full">
+    <div class="phone-device relative" id="phoneContainer">
+      
+      <!-- Phone Notch & Status Bar -->
+      <div class="h-10 bg-white flex items-center justify-between px-7 shrink-0 z-30 select-none border-b border-gray-50">
+        <span class="text-[12px] font-bold text-gray-800">9:41</span>
+        <div class="w-24 h-4 bg-black rounded-full mx-auto"></div>
+        <div class="flex items-center gap-1.5 text-gray-800 text-[11px]">
+          <i class="fa-solid fa-signal text-[10px]"></i>
+          <i class="fa-solid fa-wifi text-[10px]"></i>
+          <i class="fa-solid fa-battery-full text-xs"></i>
+        </div>
+      </div>
+
+      <!-- App Header Bar -->
+      <header id="appTopBar" class="bg-white px-4 py-2.5 flex items-center justify-between border-b border-gray-100 z-20 shrink-0" style="display: none;">
+        <button onclick="App.currentRole === 'customer' ? App.openModal('cityModal') : App.switchScreen(App.currentRole === 'stall_owner' ? 'owner-profile' : App.currentRole === 'staff' ? 'staff-expo' : 'admin-profile')" class="flex items-center gap-2 bg-purple-50 hover:bg-purple-100/80 px-3 py-1.5 rounded-full text-xs font-bold text-brand-purple-dark transition-all border border-purple-100/80">
+          <i class="fa-solid fa-location-dot text-brand-purple animate-bounce"></i>
+          <span id="currentCityLabel">Ahmedabad</span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+        </button>
+
+        <span id="userGreeting" class="text-xs font-bold text-gray-800 truncate max-w-[140px]">
+          Hello, Priya ✨
+        </span>
+
+        <div class="flex items-center gap-2">
+          <button onclick="App.switchScreen('notifications')" class="relative w-8 h-8 rounded-full bg-gray-50 hover:bg-purple-50 flex items-center justify-center text-gray-700 transition-colors">
+            <i class="fa-regular fa-bell text-sm"></i>
+            <span class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+            <span class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
+          </button>
+          <button onclick="if(App.currentRole==='customer') App.switchScreen('profile'); else if(App.currentRole==='stall_owner') App.switchScreen('owner-profile'); else if(App.currentRole==='staff') App.switchScreen('staff-profile'); else App.switchScreen('admin-profile');" class="w-8 h-8 rounded-full overflow-hidden border border-brand-purple/40">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Avatar" class="w-full h-full object-cover">
+          </button>
+        </div>
+      </header>
+
+      <!-- ================= MOBILE AUTH SCREEN ================= -->
+      <section id="screen-auth" class="screen-view active bg-white">
+        <div class="p-6 flex flex-col justify-between min-h-full">
+          <div>
+            <div class="flex items-center justify-center mt-2 mb-3">
+              <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#724C99] to-[#F5B4C2] flex items-center justify-center text-3xl font-black text-white shadow-xl">
+                D
+              </div>
+            </div>
+            
+            <div class="text-center mb-4">
+              <h2 class="text-lg font-black text-gray-900">DIDAAR EXHIBITIONS</h2>
+              <p class="text-xs text-gray-500 mt-0.5">Please sign in to access your exhibition portal</p>
+            </div>
+
+            <!-- User Type Dropdown Selector -->
+            <div class="mb-4">
+              <label class="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1.5">Select User Type</label>
+              <div class="relative">
+                <i class="fa-solid fa-users absolute left-3.5 top-3.5 text-brand-purple text-xs"></i>
+                <select id="userTypeSelect" onchange="App.setLoginRole(this.value)" class="w-full bg-purple-50/70 text-brand-purple-dark text-xs font-bold pl-9 pr-8 py-3 rounded-2xl border border-purple-200 focus:outline-none focus:border-brand-purple cursor-pointer appearance-none">
+                  <option value="customer">🛍️ Customer / Visitor</option>
+                  <option value="stall_owner">🏪 Stall Owner</option>
+                  <option value="staff">🏷️ Stall Owner Staff Member</option>
+                  <option value="admin_staff">🛡️ Admin Staff Member</option>
+                </select>
+                <i class="fa-solid fa-chevron-down absolute right-3.5 top-3.5 text-gray-400 text-xs pointer-events-none"></i>
+              </div>
+            </div>
+
+            <div id="authRoleNotice" class="bg-purple-50/70 border border-purple-100 p-2.5 rounded-xl text-[11px] text-gray-600 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-circle-info text-brand-purple"></i>
+              <span>Registered visitors can access exhibitions, stalls, products, passes & invoices.</span>
+            </div>
+
+            <form onsubmit="event.preventDefault(); App.handleAuthSubmit('login');" class="space-y-3">
+              <div>
+                <label class="block text-[11px] font-bold text-gray-700 mb-1">Email / Registered Mobile</label>
+                <div class="relative">
+                  <i class="fa-solid fa-phone absolute left-3.5 top-3.5 text-gray-400 text-xs"></i>
+                  <input id="authPhoneInput" type="text" value="+91 98765 43210" class="w-full bg-gray-50 text-xs pl-9 pr-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:border-brand-purple font-medium">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold text-gray-700 mb-1">Password</label>
+                <div class="relative">
+                  <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-gray-400 text-xs"></i>
+                  <input type="password" value="••••••••" class="w-full bg-gray-50 text-xs pl-9 pr-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:border-brand-purple">
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-[11px]">
+                <label class="flex items-center gap-1.5 text-gray-600">
+                  <input type="checkbox" checked class="accent-[#724C99]"> Remember me
+                </label>
+                <a href="#" onclick="App.showToast('Reset password link sent')" class="text-brand-purple font-bold">Forgot Password?</a>
+              </div>
+
+              <button type="submit" class="w-full bg-brand-purple-dark hover:bg-purple-900 text-white font-bold text-xs py-3.5 rounded-2xl shadow-lg transition-all mt-2">
+                Sign In to Portal →
+              </button>
+            </form>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-gray-100 text-center">
+            <p class="text-[10px] text-gray-400 mb-2">⚡ 1-Click Instant Role Login:</p>
+            <div class="grid grid-cols-4 gap-1">
+              <button onclick="App.setLoginRole('customer'); App.handleAuthSubmit('login');" class="bg-purple-50 text-brand-purple-dark font-bold text-[9px] py-2 rounded-xl border border-purple-100">
+                Visitor
+              </button>
+              <button onclick="App.setLoginRole('stall_owner'); App.handleAuthSubmit('login');" class="bg-pink-50 text-purple-950 font-bold text-[9px] py-2 rounded-xl border border-pink-200">
+                Owner
+              </button>
+              <button onclick="App.setLoginRole('staff'); App.handleAuthSubmit('login');" class="bg-emerald-50 text-emerald-950 font-bold text-[9px] py-2 rounded-xl border border-emerald-200">
+                Staff Member
+              </button>
+              <button onclick="App.setLoginRole('admin_staff'); App.handleAuthSubmit('login');" class="bg-indigo-50 text-indigo-950 font-bold text-[9px] py-2 rounded-xl border border-indigo-200">
+                Admin Staff
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Customer Screens -->
+      <section id="screen-home" class="screen-view bg-[#FAF9FD]">
+        <div class="p-4 space-y-4">
+          <h2 class="text-base font-extrabold text-gray-900">Hello, Priya ✨</h2>
+          <div onclick="App.switchScreen('pass')" class="bg-accent-banner rounded-3xl p-4 text-white card-shadow cursor-pointer">
+            <span class="text-[10px] font-bold bg-white/25 px-2 py-0.5 rounded-full">Active Pass</span>
+            <h3 class="font-bold text-sm mt-1">Didaar Grand Festive Expo</h3>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-stalls" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">Exhibition Stalls</h2></div></section>
+      <section id="screen-products" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">Featured Products</h2></div></section>
+      <section id="screen-pass" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">VIP Pass</h2></div></section>
+      <section id="screen-purchases" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">My Purchases</h2></div></section>
+      <section id="screen-profile" class="screen-view bg-[#FAF9FD]"><div class="p-4"><button onclick="App.handleLogout()" class="w-full bg-rose-50 text-rose-600 font-bold text-xs py-3 rounded-xl">Logout</button></div></section>
+
+      <!-- Stall Owner Screens -->
+      <section id="screen-owner-dashboard" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">Stall A-12 Dashboard</h2></div></section>
+      <section id="screen-owner-inventory" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">Master Inventory</h2></div></section>
+      <section id="screen-owner-staff" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">Staff Roster</h2></div></section>
+      <section id="screen-owner-sales" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">Sales Stream</h2></div></section>
+      <section id="screen-owner-post-studio" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">Poster Studio</h2></div></section>
+      <section id="screen-owner-profile" class="screen-view bg-[#FAF9FD]"><div class="p-4"><button onclick="App.handleLogout()" class="w-full bg-rose-50 text-rose-600 font-bold text-xs py-3 rounded-xl">Logout</button></div></section>
+
+      <!-- Staff Member Screens -->
+      <section id="screen-staff-pos" class="screen-view bg-[#FAF9FD]">
+        <div class="p-4 space-y-3.5">
+          <div class="bg-purple-900 rounded-3xl p-4 text-white flex justify-between items-center">
+            <div>
+              <span class="text-[10px] font-bold text-pink-200">Staff Member Billing</span>
+              <h3 class="font-bold text-sm">Zaveri Royal Jewels (Stall A-12)</h3>
+              <p class="text-[10px] text-purple-200">Cashier: Nilesh Patel</p>
+            </div>
+            <i class="fa-solid fa-cash-register text-2xl text-white"></i>
+          </div>
+
+          <div class="bg-white rounded-3xl p-3 border space-y-2 text-xs">
+            <h4 class="font-bold text-gray-900">Customer Details (WhatsApp Invoice)</h4>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="posCustName" type="text" value="Sneha Kapadia" class="bg-gray-50 p-2 rounded-xl border">
+              <input id="posCustPhone" type="tel" value="+91 98980 77665" class="bg-gray-50 p-2 rounded-xl border">
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-bold text-xs mb-2">Select In-Hand Products</h4>
+            <div id="staffPosProductList"></div>
+          </div>
+
+          <div class="bg-white rounded-3xl p-4 border space-y-2 text-xs">
+            <div class="flex justify-between font-bold"><span>Grand Total (incl. GST)</span><span id="posGrandTotal">₹0</span></div>
+            <button id="posSubmitBtn" onclick="App.generateCustomerBill()" class="w-full bg-emerald-600 text-white font-bold text-xs py-3.5 rounded-2xl shadow">
+              <i class="fa-brands fa-whatsapp"></i> Generate Bill & Send WhatsApp Invoice
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-staff-stock" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">In-Hand Stock</h2></div></section>
+      <section id="screen-staff-sales" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">My Sales History</h2></div></section>
+      <section id="screen-staff-expo" class="screen-view bg-[#FAF9FD]"><div class="p-4"><h2 class="font-bold text-base">Assigned Exhibition</h2></div></section>
+      <section id="screen-staff-profile" class="screen-view bg-[#FAF9FD]"><div class="p-4"><button onclick="App.handleLogout()" class="w-full bg-rose-50 text-rose-600 font-bold text-xs py-3 rounded-xl">Logout</button></div></section>
+
+      <!-- Admin Staff Screens -->
+      <section id="screen-admin-entry" class="screen-view bg-[#FAF9FD]">
+        <div class="p-4 space-y-3.5">
+          <div class="bg-gradient-to-r from-purple-900 to-indigo-900 rounded-3xl p-4 text-white flex justify-between items-center">
+            <div>
+              <span class="text-[10px] font-bold text-pink-200">Gate 1 Entry Terminal</span>
+              <h3 class="font-bold text-sm">Customer Entry Registration</h3>
+              <p class="text-[10px] text-purple-200">Admin Staff: Rajesh Varma</p>
+            </div>
+            <span class="font-black text-xs text-white">1,420 Today</span>
+          </div>
+
+          <div class="bg-white rounded-3xl p-3 border space-y-2 text-xs">
+            <input type="text" oninput="App.searchExistingCustomer(this.value)" placeholder="Search existing customer by mobile..." class="w-full bg-gray-50 p-2 rounded-xl border text-xs">
+            <div id="adminCustSearchResult" class="hidden"></div>
+          </div>
+
+          <div class="bg-white rounded-3xl p-4 border space-y-3 text-xs">
+            <h4 class="font-bold text-gray-900">Register New Visitor</h4>
+            <input id="regVisitorName" type="text" placeholder="Visitor Full Name *" class="w-full bg-gray-50 p-2 rounded-xl border">
+            <input id="regVisitorPhone" type="tel" placeholder="Mobile (WhatsApp) *" class="w-full bg-gray-50 p-2 rounded-xl border">
+            <button onclick="App.registerVisitorEntry()" class="w-full bg-brand-purple-dark text-white font-bold text-xs py-3.5 rounded-2xl shadow">
+              <i class="fa-solid fa-qrcode"></i> Register Entry & Send WhatsApp Pass
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-admin-visitors" class="screen-view bg-[#FAF9FD]"><div class="p-4" id="adminVisitorListContainer"></div></section>
+      <section id="screen-admin-stalls" class="screen-view bg-[#FAF9FD]"><div class="p-4" id="adminStallListContainer"></div></section>
+      <section id="screen-admin-exit-scan" class="screen-view bg-[#FAF9FD]">
+        <div class="p-4 space-y-3.5 text-xs">
+          <h2 class="font-bold text-base">Gate 3 Stall Exit Scanner</h2>
+          <button onclick="App.scanStallExitQR('Stall A-12')" class="w-full p-3 rounded-2xl border bg-emerald-50 text-emerald-950 font-bold">Scan Stall A-12 (Payment Cleared)</button>
+          <button onclick="App.scanStallExitQR('Stall B-08')" class="w-full p-3 rounded-2xl border bg-rose-50 text-rose-950 font-bold">Scan Stall B-08 (Dues Pending)</button>
+        </div>
+      </section>
+      <section id="screen-admin-profile" class="screen-view bg-[#FAF9FD]"><div class="p-4"><button onclick="App.handleLogout()" class="w-full bg-rose-50 text-rose-600 font-bold text-xs py-3 rounded-xl">Logout</button></div></section>
+
+      <section id="screen-notifications" class="screen-view bg-[#FAF9FD]"><div class="p-4" id="notificationListContainer"></div></section>
+
+      <!-- Bottom Navs -->
+      <nav id="customerBottomNav" class="bottom-nav-bar select-none" style="display: none;">
+        <button onclick="App.switchScreen('home')" data-screen="home" class="nav-item active"><i class="fa-solid fa-house"></i><span>Home</span></button>
+        <button onclick="App.switchScreen('stalls')" data-screen="stalls" class="nav-item"><i class="fa-solid fa-store"></i><span>Stalls</span></button>
+        <button onclick="App.switchScreen('pass')" data-screen="pass" class="nav-item"><i class="fa-solid fa-qrcode"></i><span>Pass</span></button>
+        <button onclick="App.switchScreen('purchases')" data-screen="purchases" class="nav-item"><i class="fa-solid fa-receipt"></i><span>Bills</span></button>
+        <button onclick="App.switchScreen('profile')" data-screen="profile" class="nav-item"><i class="fa-solid fa-user"></i><span>Profile</span></button>
+      </nav>
+
+      <nav id="ownerBottomNav" class="bottom-nav-bar select-none" style="display: none;">
+        <button onclick="App.switchScreen('owner-dashboard')" data-screen="owner-dashboard" class="nav-item active"><i class="fa-solid fa-chart-pie"></i><span>Overview</span></button>
+        <button onclick="App.switchScreen('owner-inventory')" data-screen="owner-inventory" class="nav-item"><i class="fa-solid fa-boxes-stacked"></i><span>Stock</span></button>
+        <button onclick="App.switchScreen('owner-staff')" data-screen="owner-staff" class="nav-item"><i class="fa-solid fa-users-gear"></i><span>Staff</span></button>
+        <button onclick="App.switchScreen('owner-sales')" data-screen="owner-sales" class="nav-item"><i class="fa-solid fa-file-invoice-dollar"></i><span>Sales</span></button>
+        <button onclick="App.switchScreen('owner-profile')" data-screen="owner-profile" class="nav-item"><i class="fa-solid fa-user"></i><span>Profile</span></button>
+      </nav>
+
+      <nav id="staffBottomNav" class="bottom-nav-bar select-none" style="display: none;">
+        <button onclick="App.switchScreen('staff-pos')" data-screen="staff-pos" class="nav-item active"><i class="fa-solid fa-cash-register"></i><span>POS Bill</span></button>
+        <button onclick="App.switchScreen('staff-stock')" data-screen="staff-stock" class="nav-item"><i class="fa-solid fa-boxes-stacked"></i><span>Stock</span></button>
+        <button onclick="App.switchScreen('staff-sales')" data-screen="staff-sales" class="nav-item"><i class="fa-solid fa-receipt"></i><span>Sales</span></button>
+        <button onclick="App.switchScreen('staff-expo')" data-screen="staff-expo" class="nav-item"><i class="fa-solid fa-calendar-days"></i><span>Expo</span></button>
+        <button onclick="App.switchScreen('staff-profile')" data-screen="staff-profile" class="nav-item"><i class="fa-solid fa-id-badge"></i><span>Profile</span></button>
+      </nav>
+
+      <nav id="adminBottomNav" class="bottom-nav-bar select-none" style="display: none;">
+        <button onclick="App.switchScreen('admin-entry')" data-screen="admin-entry" class="nav-item active"><i class="fa-solid fa-id-card-clip"></i><span>Entry Pass</span></button>
+        <button onclick="App.switchScreen('admin-visitors')" data-screen="admin-visitors" class="nav-item"><i class="fa-solid fa-users"></i><span>Visitors</span></button>
+        <button onclick="App.switchScreen('admin-stalls')" data-screen="admin-stalls" class="nav-item"><i class="fa-solid fa-store"></i><span>Stalls</span></button>
+        <button onclick="App.switchScreen('admin-exit-scan')" data-screen="admin-exit-scan" class="nav-item"><i class="fa-solid fa-qrcode"></i><span>Exit Gate</span></button>
+        <button onclick="App.switchScreen('admin-profile')" data-screen="admin-profile" class="nav-item"><i class="fa-solid fa-user-shield"></i><span>Profile</span></button>
+      </nav>
+
+    </div>
+  </div>
+
+  <!-- ================= VIEW 2: SUPER ADMIN WEB PANEL ================= -->
+  <div id="superAdminWebView" class="w-full max-w-6xl bg-[#1C1929] rounded-3xl overflow-hidden shadow-2xl border border-white/10 text-gray-800" style="display: none;">
+    <div class="flex min-h-[780px]">
+      
+      <!-- Super Admin Sidebar -->
+      <aside class="w-64 bg-[#14121F] p-4 flex flex-col justify-between border-r border-white/5 select-none shrink-0">
+        <div>
+          <!-- Admin Brand Header -->
+          <div class="flex items-center gap-3 px-2 py-3 mb-4 border-b border-white/10">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#724C99] to-[#F5B4C2] flex items-center justify-center font-black text-lg text-white shadow-md">
+              D
+            </div>
+            <div>
+              <h2 class="font-extrabold text-sm text-white tracking-wide">SUPER ADMIN</h2>
+              <span class="text-[10px] text-pink-300 font-bold">Executive Web Panel</span>
+            </div>
+          </div>
+
+          <!-- Navigation Links -->
+          <nav class="space-y-1">
+            <div onclick="App.switchAdminWebSection('admin-dash')" data-section="admin-dash" class="admin-nav-link active">
+              <i class="fa-solid fa-chart-pie w-5"></i>
+              <span>Dashboard Overview</span>
+            </div>
+
+            <div onclick="App.switchAdminWebSection('admin-exhibitions')" data-section="admin-exhibitions" class="admin-nav-link">
+              <i class="fa-solid fa-calendar-days w-5"></i>
+              <span>Exhibitions & Cities</span>
+            </div>
+
+            <div onclick="App.switchAdminWebSection('admin-applications')" data-section="admin-applications" class="admin-nav-link">
+              <i class="fa-solid fa-file-signature w-5"></i>
+              <span>Stall Applications</span>
+              <span class="ml-auto bg-amber-400 text-purple-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">1 New</span>
+            </div>
+
+            <div onclick="App.switchAdminWebSection('admin-stalls-mgmt')" data-section="admin-stalls-mgmt" class="admin-nav-link">
+              <i class="fa-solid fa-store w-5"></i>
+              <span>Stalls & Pricing</span>
+            </div>
+
+            <div onclick="App.switchAdminWebSection('admin-payments')" data-section="admin-payments" class="admin-nav-link">
+              <i class="fa-solid fa-receipt w-5"></i>
+              <span>Payments & Exit Pass</span>
+            </div>
+
+            <div onclick="App.switchAdminWebSection('admin-staff-mgmt')" data-section="admin-staff-mgmt" class="admin-nav-link">
+              <i class="fa-solid fa-user-shield w-5"></i>
+              <span>Admin & Stall Staff</span>
+            </div>
+
+            <div onclick="App.switchAdminWebSection('admin-visitors-mgmt')" data-section="admin-visitors-mgmt" class="admin-nav-link">
+              <i class="fa-solid fa-users w-5"></i>
+              <span>Visitor Passes (WhatsApp)</span>
+            </div>
+
+            <div onclick="App.switchAdminWebSection('admin-audit-log')" data-section="admin-audit-log" class="admin-nav-link">
+              <i class="fa-solid fa-clock-rotate-left w-5"></i>
+              <span>Audit & Activity Trail</span>
+            </div>
+          </nav>
+        </div>
+
+        <!-- Super Admin Profile & Switcher -->
+        <div class="pt-4 border-t border-white/10 space-y-2">
+          <div class="flex items-center gap-3 px-2">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" class="w-9 h-9 rounded-xl object-cover border border-purple-400/50">
+            <div class="min-w-0">
+              <h4 class="font-bold text-xs text-white truncate">Aditya Mehta</h4>
+              <span class="text-[10px] text-gray-400">admin@didaar.com</span>
+            </div>
+          </div>
+          <button onclick="App.switchPortal('mobile')" class="w-full bg-white/10 hover:bg-white/15 text-purple-200 text-xs font-bold py-2 rounded-xl transition-colors flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-mobile-screen"></i> Switch to Mobile View
+          </button>
+        </div>
+      </aside>
+
+      <!-- Super Admin Main Content Area -->
+      <main class="flex-1 bg-[#FAF9FD] p-6 overflow-y-auto flex flex-col justify-between">
+        <div>
+          
+          <!-- Web Section 1: Dashboard Overview -->
+          <section id="web-sec-admin-dash" class="admin-web-section active space-y-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-black text-gray-900">Executive Overview</h2>
+                <p class="text-xs text-gray-500">Live operational intelligence across all exhibition cities</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="App.showToast('Exporting executive report summary (PDF)... 📊')" class="bg-brand-purple-dark hover:bg-purple-900 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5">
+                  <i class="fa-solid fa-file-export"></i> Export Report
+                </button>
+              </div>
+            </div>
+
+            <!-- 4 Metric Cards -->
+            <div class="grid grid-cols-4 gap-4">
+              <div class="bg-white p-4 rounded-2xl border border-gray-100 card-shadow">
+                <span class="text-[11px] font-bold text-gray-400 uppercase">Stall Rent Collected</span>
+                <h3 id="webTotalRentCollected" class="text-2xl font-black text-brand-purple-dark mt-1">₹84.50 Lakhs</h3>
+                <span class="text-[10px] text-emerald-600 font-bold">128 Stalls Settled</span>
+              </div>
+
+              <div class="bg-white p-4 rounded-2xl border border-gray-100 card-shadow">
+                <span class="text-[11px] font-bold text-gray-400 uppercase">Total Sales GMV</span>
+                <h3 id="webTotalGMVSales" class="text-2xl font-black text-gray-900 mt-1">₹142.80 Lakhs</h3>
+                <span class="text-[10px] text-emerald-600 font-bold">Live Billing Stream</span>
+              </div>
+
+              <div class="bg-white p-4 rounded-2xl border border-gray-100 card-shadow">
+                <span class="text-[11px] font-bold text-gray-400 uppercase">Stall Allocation</span>
+                <h3 id="webStallOccupancy" class="text-base font-black text-gray-900 mt-1">128 / 140 Occupied</h3>
+                <span class="text-[10px] text-brand-purple font-bold">12 Stalls Vacant</span>
+              </div>
+
+              <div class="bg-white p-4 rounded-2xl border border-gray-100 card-shadow">
+                <span class="text-[11px] font-bold text-gray-400 uppercase">Visitor Footfall</span>
+                <h3 id="webTotalVisitorsRegistered" class="text-base font-black text-gray-900 mt-1">1,420 Today</h3>
+                <span class="text-[10px] text-emerald-600 font-bold">100% WhatsApp Delivered</span>
+              </div>
+            </div>
+
+            <!-- Live Exhibition Banner -->
+            <div class="bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 rounded-3xl p-5 text-white shadow-lg flex items-center justify-between">
+              <div>
+                <span class="bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Active Exhibition</span>
+                <h3 class="text-lg font-black mt-1">Didaar Grand Festive Expo 2026</h3>
+                <p class="text-xs text-purple-200">Riverfront Convention Centre, Ahmedabad • 28-30 Mar 2026 (Day 2 of 3)</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="App.switchAdminWebSection('admin-applications')" class="bg-[#F8C1C7] text-[#543377] font-bold text-xs px-4 py-2.5 rounded-xl shadow">
+                  Manage Stalls & Approvals
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Web Section 2: Exhibitions & Cities -->
+          <section id="web-sec-admin-exhibitions" class="admin-web-section space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-black text-gray-900">Exhibitions & City Management</h2>
+                <p class="text-xs text-gray-500">Configure exhibition lifecycle, venues, and city venues</p>
+              </div>
+              <button onclick="App.showToast('Create new exhibition modal opened')" class="bg-brand-purple-dark text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5">
+                <i class="fa-solid fa-plus"></i> Create Exhibition
+              </button>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-gray-200 overflow-hidden card-shadow">
+              <table class="w-full text-left admin-table">
+                <thead>
+                  <tr>
+                    <th>Exhibition & Venue</th>
+                    <th>City</th>
+                    <th>Dates</th>
+                    <th>Stall Capacity</th>
+                    <th>Lifecycle Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="webExhibitionsTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Web Section 3: Stall Applications & Approvals -->
+          <section id="web-sec-admin-applications" class="admin-web-section space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-black text-gray-900">Stall Applications & Onboarding</h2>
+                <p class="text-xs text-gray-500">Review business credentials, assign booth numbers, and trigger onboarding credentials</p>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-gray-200 overflow-hidden card-shadow">
+              <table class="w-full text-left admin-table">
+                <thead>
+                  <tr>
+                    <th>App ID & Date</th>
+                    <th>Brand & Business</th>
+                    <th>Owner & Phone</th>
+                    <th>Assigned Stall</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="webApplicationsTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Web Section 4: Stalls & Pricing -->
+          <section id="web-sec-admin-stalls-mgmt" class="admin-web-section space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-black text-gray-900">Stalls & Pricing Matrix</h2>
+                <p class="text-xs text-gray-500">Configure booth numbers, hall layout, and stall-wise pricing</p>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-gray-200 overflow-hidden card-shadow">
+              <table class="w-full text-left admin-table">
+                <thead>
+                  <tr>
+                    <th>Stall No</th>
+                    <th>Hall</th>
+                    <th>Category</th>
+                    <th>Booth Dimension</th>
+                    <th>Configured Price</th>
+                    <th>Occupancy Status</th>
+                  </tr>
+                </thead>
+                <tbody id="webStallsTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Web Section 5: Payments & Exit Clearance -->
+          <section id="web-sec-admin-payments" class="admin-web-section space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-black text-gray-900">Stall Payments & Gate Exit Clearance</h2>
+                <p class="text-xs text-gray-500">Master accounts tracking of advance payments, remaining dues, and exit QR clearance</p>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-gray-200 overflow-hidden card-shadow">
+              <table class="w-full text-left admin-table">
+                <thead>
+                  <tr>
+                    <th>Stall & Brand</th>
+                    <th>Total Price</th>
+                    <th>Advance Paid</th>
+                    <th>Remaining Dues</th>
+                    <th>Payment Status</th>
+                    <th>Exit Clearance</th>
+                    <th>Accounts Action</th>
+                  </tr>
+                </thead>
+                <tbody id="webPaymentsTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Web Section 6: Staff Management -->
+          <section id="web-sec-admin-staff-mgmt" class="admin-web-section space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-black text-gray-900">Admin Staff & Operations Management</h2>
+                <p class="text-xs text-gray-500">Manage gate coordinators and entry staff accounts</p>
+              </div>
+              <button onclick="App.showToast('Create Admin Staff modal opened')" class="bg-brand-purple-dark text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5">
+                <i class="fa-solid fa-user-plus"></i> Add Admin Staff
+              </button>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-gray-200 overflow-hidden card-shadow">
+              <table class="w-full text-left admin-table">
+                <thead>
+                  <tr>
+                    <th>Staff ID</th>
+                    <th>Staff Name & Phone</th>
+                    <th>Role</th>
+                    <th>Assigned Exhibition</th>
+                    <th>Assigned Gate Duties</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="webStaffTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Web Section 7: Visitors Management -->
+          <section id="web-sec-admin-visitors-mgmt" class="admin-web-section space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-xl font-black text-gray-900">Visitor Registrations & WhatsApp Passes</h2>
+                <p class="text-xs text-gray-500">Real-time visitor logs and WhatsApp pass dispatch monitoring</p>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-gray-200 overflow-hidden card-shadow">
+              <table class="w-full text-left admin-table">
+                <thead>
+                  <tr>
+                    <th>Pass ID</th>
+                    <th>Visitor Name</th>
+                    <th>Phone</th>
+                    <th>Category</th>
+                    <th>Entry Timestamp</th>
+                    <th>WhatsApp Delivery</th>
+                  </tr>
+                </thead>
+                <tbody id="webVisitorsTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Web Section 8: Audit Log -->
+          <section id="web-sec-admin-audit-log" class="admin-web-section space-y-4">
+            <div>
+              <h2 class="text-xl font-black text-gray-900">System Audit & Activity Trail</h2>
+              <p class="text-xs text-gray-500">Immutable record of approvals, rejections, payments, and pass dispatches</p>
+            </div>
+
+            <div id="webAuditLogContainer" class="space-y-2.5"></div>
+          </section>
+
+        </div>
+
+        <footer class="pt-6 border-t border-gray-200 text-center text-xs text-gray-400">
+          Didaar Exhibition Platform v2.4 • Super Admin Enterprise Edition
+        </footer>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Super Admin Modal (Stall Approval & Assignment) -->
+  <div id="superAdminModal" class="modal-overlay" onclick="if(event.target === this) App.closeModal('superAdminModal')">
+    <div class="modal-content" id="superAdminModalBody"></div>
+  </div>
+
+  <div id="cityModal" class="modal-overlay" onclick="if(event.target === this) App.closeModal('cityModal')">
+    <div class="modal-content"><div id="cityListModal"></div></div>
+  </div>
+
+  <div id="productModal" class="modal-overlay" onclick="if(event.target === this) App.closeModal('productModal')">
+    <div class="modal-content" id="productModalBody"></div>
+  </div>
+
+  <div id="invoiceModal" class="modal-overlay" onclick="if(event.target === this) App.closeModal('invoiceModal')">
+    <div class="modal-content" id="invoiceModalBody"></div>
+  </div>
+
+  <!-- In-App Floating Toast Notification -->
+  <div id="appToast" class="fixed top-14 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur-md text-white text-xs font-semibold px-4 py-2.5 rounded-2xl shadow-xl z-50 pointer-events-none opacity-0 translate-y-4 transition-all duration-300 max-w-[340px] text-center">
+    Notification Message
+  </div>
+
+  <!-- Prototype Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
